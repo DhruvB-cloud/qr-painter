@@ -1,0 +1,150 @@
+<!doctype html> <!-- Tells the browser this is a modern HTML5 page -->
+<html lang="en"> <!-- The root element; lang="en" helps screen readers and search engines -->
+<head> <!-- The head holds settings and links, nothing visible on the page -->
+  <meta charset="UTF-8" /> <!-- Use UTF-8 so emoji and every language display correctly -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <!-- Makes the page fit phone screens instead of showing a tiny desktop page -->
+  <title>QR Painter</title> <!-- The text shown on the browser tab -->
+  <!-- Picks light or dark mode BEFORE the page is drawn, so it never flashes the wrong colours.
+       It runs here, in the head, on purpose: app.js loads later, which would be too late. -->
+  <script>
+    (function () { // a function that runs immediately, so its variables don't leak into the rest of the page
+      var saved = null; // the user's earlier choice, if any
+      try { saved = localStorage.getItem("qrpaint-theme"); } catch (e) {} // read it from the browser's storage (can fail in private windows, so we "try")
+      var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches; // use the saved choice, or else the computer's own setting
+      document.documentElement.dataset.theme = dark ? "dark" : "light"; // sets <html data-theme="dark"> or "light", which style.css reacts to
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css" /> <!-- Loads our own styles (colours, layout) from style.css -->
+  <!-- Loads the free "qrcode-generator" library from a CDN (a fast public file server).
+       It does the hard maths of turning text into a QR grid, so we don't have to. -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="app.js" defer></script> <!-- Loads our code; "defer" waits until the page is built so our code can find its elements -->
+  <script src="easter-egg.js" defer></script> <!-- The secret: flip the light/dark switch 5 times quickly (kept in its own file so app.js stays tidy) -->
+</head>
+<body> <!-- Everything inside body is visible on the page -->
+  <main class="app"> <!-- "main" marks the main content; class="app" lets CSS style it -->
+
+    <header class="top"> <!-- The title bar at the top -->
+      <div class="logo" aria-hidden="true"> <!-- A small square logo; aria-hidden because it's decoration, not information -->
+        <svg viewBox="0 0 24 24" width="24" height="24"> <!-- SVG = a picture drawn with shapes; viewBox sets a 24x24 drawing grid -->
+          <rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor" /> <!-- top-left square, like a QR corner marker -->
+          <rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" /> <!-- top-right square -->
+          <rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" /> <!-- bottom-left square -->
+          <circle cx="17.5" cy="17.5" r="3.5" fill="currentColor" opacity="0.75" /> <!-- a paint dot in the fourth corner -->
+        </svg>
+      </div>
+      <div> <!-- Groups the heading and subtitle so they stack -->
+        <h1>QR Painter</h1> <!-- The big page heading -->
+        <p class="sub">Turn any link or message into a QR code, then colour it in.</p> <!-- A short explanation under the heading -->
+      </div>
+      <label class="theme-toggle" title="Switch light / dark mode"> <!-- The light/dark switch; it's a label, so clicking anywhere on it flips the checkbox -->
+        <svg class="sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> <!-- sun icon (light side) -->
+        <input type="checkbox" id="themeToggle" class="switch" aria-label="Dark mode" /> <!-- the sliding switch: ticked = dark mode (reuses the Snap switch's style) -->
+        <svg class="moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" fill="currentColor"/></svg> <!-- moon icon (dark side) -->
+      </label>
+    </header>
+
+    <div class="layout"> <!-- Two columns on wide screens (canvas left, controls right); one column on phones -->
+
+      <aside class="side"> <!-- The control column; "aside" means content that sits beside the main thing -->
+
+        <section class="panel"> <!-- Card 1: the text input -->
+          <h2 class="panel-title"><span class="step">1</span> Your content</h2> <!-- Card heading with a numbered badge -->
+          <label for="textInput" class="field-label">Link or sentence</label> <!-- Label tied to the input by its id, so clicking it focuses the box -->
+          <textarea id="textInput" rows="2" placeholder=" message">https://dhruvb-cloud.github.io/idcard</textarea> <!-- Where the user types; starts with an example so a QR shows right away -->
+          <p id="message" class="message" role="status"></p> <!-- Shows errors or tips; role="status" makes screen readers announce changes -->
+        </section>
+
+        <section class="panel tools"> <!-- Card 2: the painting tools, in three rows -->
+          <h2 class="panel-title"><span class="step">2</span> Paint</h2> <!-- Card heading with a numbered badge -->
+
+          <div class="row"> <!-- Row 1: brush/eraser, brush colour, brush size -->
+            <div class="segmented" role="group" aria-label="Tool"> <!-- A "segmented control": two buttons joined like a switch -->
+              <button id="brushBtn" class="tool active" type="button"> <!-- Paint tool; starts selected ("active") -->
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12l9.2-9.4zM7.5 13.7l2.8 2.8c-.3 2.9-2.4 4.9-6.8 4.9.9-1.2 1.2-2.3 1.4-3.6.2-2.2 1.2-3.7 2.6-4.1z" fill="currentColor"/></svg> <!-- brush icon -->
+                Brush <!-- button text -->
+              </button>
+              <button id="eraserBtn" class="tool" type="button"> <!-- Eraser tool: removes paint but keeps the QR underneath -->
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15.1 3.5a2 2 0 0 1 2.8 0l2.6 2.6a2 2 0 0 1 0 2.8L11.4 18H20v2H8.6l-4.1-4.1a2 2 0 0 1 0-2.8L15.1 3.5zM9.2 9.5 6 12.6l3.4 3.4h1.2l2-2-3.4-4.5z" fill="currentColor"/></svg> <!-- eraser icon -->
+                Eraser <!-- button text -->
+              </button>
+            </div>
+            <label class="swatch-field" title="Brush colour"> <!-- Colour picker with its label -->
+              <input type="color" id="brushColor" value="#e8467c" /> <!-- Picks the paint colour -->
+              <span>Colour</span> <!-- visible label text -->
+            </label>
+          </div>
+
+          <div class="size-field"> <!-- Still part of row 1: the size slider gets its own full-width line so it's easy to drag -->
+            <div class="size-label-row"> <!-- the label on the left and the current size on the right -->
+              <label for="brushSize" class="field-label">Brush size</label> <!-- label for the slider -->
+              <span id="sizeValue" class="size-value">14 px</span> <!-- shows the exact size; app.js updates it as you drag -->
+            </div>
+            <div class="size-row"> <!-- slider and preview side by side -->
+              <input type="range" id="brushSize" min="2" max="40" value="14" /> <!-- Slider for brush thickness in pixels -->
+              <span class="size-box" aria-hidden="true"><span id="sizeDot" class="size-dot"></span></span> <!-- A circle that previews the brush size; aria-hidden because it's only visual -->
+            </div>
+          </div>
+
+          <div class="divider"></div> <!-- a thin line separating the rows -->
+
+          <div class="row"> <!-- Row 2: QR colour, snap to squares -->
+            <label class="swatch-field" title="QR colour"> <!-- Colour picker with its label -->
+              <input type="color" id="darkColor" value="#1b1b1f" /> <!-- Colour of the dark squares -->
+              <span>QR colour</span> <!-- visible label text -->
+            </label>
+            <label class="switch-field"> <!-- A checkbox styled as an on/off switch -->
+              <input type="checkbox" id="snapToggle" class="switch" /> <!-- When on, the brush fills whole QR squares (pixel-art style) -->
+              <span>Snap to squares</span> <!-- visible label text -->
+            </label>
+          </div>
+
+          <div class="divider"></div> <!-- a thin line separating the rows -->
+
+          <div class="row"> <!-- Row 3: undo, clear paint -->
+            <button id="undoBtn" class="ghost" type="button"> <!-- Undoes the last brush stroke -->
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 7V3L2 9.5 9 16v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-9.5-11-10z" fill="currentColor"/></svg> <!-- curved-arrow icon -->
+              Undo <!-- button text -->
+            </button>
+            <button id="clearBtn" class="ghost danger" type="button"> <!-- Removes all paint, keeps the QR -->
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zM6 8h12l-1 13H7L6 8z" fill="currentColor"/></svg> <!-- bin icon -->
+              Clear paint <!-- button text -->
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="canvas-col"> <!-- The main column: the QR canvas and the download card -->
+        <!-- The drawing area. Two canvases sit exactly on top of each other, like layers in a paint app:
+             the bottom one shows the QR code, the top one holds the user's paint. -->
+        <div class="stage-wrap"> <!-- a soft frame around the canvas -->
+          <div class="stage" id="stage"> <!-- The container that stacks the two canvases -->
+            <canvas id="qrCanvas"></canvas> <!-- Bottom layer: the QR code -->
+            <canvas id="paintCanvas"></canvas> <!-- Top layer: the paint strokes -->
+          </div>
+        </div>
+
+        <section class="panel download"> <!-- The download area under the QR code -->
+          <h2 class="panel-title"><span class="step">3</span> Download</h2> <!-- Card heading with a numbered badge -->
+          <div class="download-grid"> <!-- the two format buttons side by side -->
+            <button class="format-btn" type="button" data-format="png"> <!-- data-format tells our code which file type this button saves -->
+              <span class="format-name">PNG</span> <!-- the format, big -->
+              <span class="format-note">Sharpest edges · best for printing</span> <!-- a short explanation, small -->
+            </button>
+            <button class="format-btn" type="button" data-format="jpeg"> <!-- the JPEG option -->
+              <span class="format-name">JPEG</span> <!-- the format, big -->
+              <span class="format-note">Smaller file · easy to share</span> <!-- a short explanation, small -->
+            </button>
+          </div>
+          <p id="downloadStatus" class="message" role="status"></p> <!-- Tells the user when the file has been saved -->
+        </section>
+
+        <p class="hint"> <!-- Helps users keep the code scannable -->
+          <strong>Tip:</strong> Try Fliping the Switch 5 times.
+          <span id="viewCount" class="view-count" hidden></span> <!-- "👀 QR Paint has been opened N times." - filled in by app.js; stays hidden if the counter can't be reached -->
+        </p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

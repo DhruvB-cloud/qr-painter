@@ -1,0 +1,7 @@
+# .gitignore - files git should never save or upload
+
+# Editor settings
+.vscode/
+.idea/
+# Python's cache folder (created if serve.py is ever imported)
+__pycache__/

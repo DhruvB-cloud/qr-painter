@@ -1,0 +1,555 @@
+/* ---------- Colour "tokens": named colours we reuse everywhere ---------- */
+:root { /* :root means "the whole page"; variables set here work everywhere */
+  --bg: #f5f3ef;              /* page background (warm off-white) */
+  --surface: #ffffff;         /* card background */
+  --surface-2: #f1eee8;       /* slightly darker fill for inputs and the tool switch */
+  --text: #1d1c21;            /* main text colour */
+  --muted: #6e6b76;           /* softer text for labels and notes */
+  --border: #e5e1d9;          /* thin lines around cards and inputs */
+  --border-strong: #cdc5b7;   /* a darker line for fields that need to stand out (the colour pickers) */
+  --accent: #e8467c;          /* the pink highlight colour */
+  --accent-strong: #d23468;   /* a deeper pink for hover */
+  --accent-soft: rgba(232, 70, 124, 0.12); /* see-through pink for soft backgrounds */
+  --accent-text: #ffffff;     /* text on top of pink */
+  --error: #c0392b;           /* red for error messages */
+  --success: #2e8b57;         /* green for "saved" messages */
+  --shadow: 0 1px 2px rgba(20, 16, 10, 0.04), 0 8px 24px rgba(20, 16, 10, 0.06); /* soft card shadow: one tight, one wide */
+  --radius: 16px;             /* corner roundness for cards */
+  /* Settings shared by all 16 background colour blobs (see body below) */
+  --blob-light: 68%;  /* how light each blob colour is (0% = black, 100% = white); pastel in light mode */
+  --blob-alpha: 0.52; /* how solid each blob is (0 = invisible, 1 = solid) */
+  --glass: rgba(255, 255, 255, 0.72); /* card background: white at 72% solid, so the colours show through a little */
+  --glass-blur: 14px; /* how strongly the cards blur what's behind them (the easter egg turns this up) */
+  --blob-size: 34vw 38vh; /* each blob's width and height (vw/vh = % of window width/height) */
+}
+
+/* When the computer is in dark mode, swap to darker colours */
+/* Dark mode: these colours apply when the page's <html> tag has data-theme="dark".
+   A small script in index.html sets that at start-up (from your saved choice, or your computer's setting),
+   and the light/dark switch in the header changes it. */
+:root[data-theme="dark"] { /* [data-theme="dark"] means "only when this attribute is set to dark" */
+  color-scheme: dark; /* also tells the browser to draw its own parts (scrollbars, sliders) in dark style */
+  /* below: the same colour variables as above, overridden with darker values */
+    --bg: #121216;            /* dark page background */
+    --surface: #1c1c22;       /* dark card background */
+    --surface-2: #26262e;     /* dark input fill */
+    --text: #ededf2;          /* light text so it's readable */
+    --muted: #9e9ba8;         /* softer light text */
+    --border: #30303a;        /* darker lines */
+    --border-strong: #55556a; /* a brighter line on dark, so the colour pickers stand out */
+    --accent: #ff5c93;        /* a slightly brighter pink that glows on dark */
+    --accent-strong: #ff7aa8; /* hover pink */
+    --accent-soft: rgba(255, 92, 147, 0.14); /* soft pink background */
+    --error: #ff7b6b;         /* brighter red */
+    --success: #5fd49a;       /* brighter green */
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35); /* stronger shadow on dark */
+    --blob-light: 50%;  /* deeper, richer colours on dark */
+    --blob-alpha: 0.30; /* dimmer than light mode so the glows don't overpower the dark page */
+    --glass: rgba(28, 28, 34, 0.64); /* dark card background at 64% solid (dark cards hide more, so they need a little extra see-through) */
+}
+
+/* ---------- Basic page setup ---------- */
+* { box-sizing: border-box; } /* width includes padding and border, so sizes are easier to predict */
+
+body { /* the whole visible page */
+  margin: 0; /* remove the browser's default gap */
+  min-height: 100vh; /* at least as tall as the window (vh = % of window height) */
+  color: var(--text); /* text colour */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; /* the computer's own clean font */
+  line-height: 1.45; /* comfortable spacing between lines of text */
+  background-color: var(--bg); /* base colour underneath the glows */
+  /* 16 soft colour "blobs" spread over the screen in a 4x4 grid. Each radial-gradient is a circle of colour
+     that fades to transparent; layered together they blend into a multi-colour wash (a "mesh gradient").
+     Colours use hsl(hue saturation lightness / alpha): the hue is a position on the colour wheel in degrees
+     (0 = red, 120 = green, 240 = blue), so stepping 22.5 degrees each time gives 16 evenly spaced colours.
+     The grid "snakes" (left-to-right, then right-to-left) so neighbouring blobs have similar colours and blend smoothly. */
+  background-image:
+    /* Row 1 (top), left to right */
+    radial-gradient(var(--blob-size) at 4% 2%, hsl(0 90% var(--blob-light) / var(--blob-alpha)), transparent 70%),     /* 1: red */
+    radial-gradient(var(--blob-size) at 35% 0%, hsl(22 95% var(--blob-light) / var(--blob-alpha)), transparent 70%),   /* 2: orange */
+    radial-gradient(var(--blob-size) at 66% 4%, hsl(45 95% var(--blob-light) / var(--blob-alpha)), transparent 70%),   /* 3: amber */
+    radial-gradient(var(--blob-size) at 97% 0%, hsl(67 85% var(--blob-light) / var(--blob-alpha)), transparent 70%),   /* 4: yellow-lime */
+    /* Row 2, right to left */
+    radial-gradient(var(--blob-size) at 95% 34%, hsl(90 75% var(--blob-light) / var(--blob-alpha)), transparent 70%),  /* 5: lime */
+    radial-gradient(var(--blob-size) at 64% 30%, hsl(112 70% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 6: green */
+    radial-gradient(var(--blob-size) at 33% 36%, hsl(135 70% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 7: emerald */
+    radial-gradient(var(--blob-size) at 2% 31%, hsl(157 75% var(--blob-light) / var(--blob-alpha)), transparent 70%),  /* 8: mint */
+    /* Row 3, left to right */
+    radial-gradient(var(--blob-size) at 5% 66%, hsl(180 75% var(--blob-light) / var(--blob-alpha)), transparent 70%),  /* 9: teal */
+    radial-gradient(var(--blob-size) at 36% 63%, hsl(202 85% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 10: sky blue */
+    radial-gradient(var(--blob-size) at 67% 68%, hsl(225 85% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 11: blue */
+    radial-gradient(var(--blob-size) at 98% 64%, hsl(247 85% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 12: indigo */
+    /* Row 4 (bottom), right to left */
+    radial-gradient(var(--blob-size) at 96% 99%, hsl(270 85% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 13: violet */
+    radial-gradient(var(--blob-size) at 65% 96%, hsl(292 80% var(--blob-light) / var(--blob-alpha)), transparent 70%), /* 14: purple */
+    radial-gradient(var(--blob-size) at 34% 100%, hsl(315 85% var(--blob-light) / var(--blob-alpha)), transparent 70%),/* 15: magenta */
+    radial-gradient(var(--blob-size) at 3% 97%, hsl(337 90% var(--blob-light) / var(--blob-alpha)), transparent 70%);  /* 16: pink */
+  background-repeat: no-repeat; /* draw each glow once, not tiled */
+  background-attachment: fixed; /* glows stay put while the page scrolls, so the colours always fill the screen */
+}
+
+.app { /* the outer container */
+  max-width: 1120px; /* don't stretch too wide on big monitors */
+  margin: 0 auto; /* centre it */
+  padding: 24px 16px 40px; /* space around the edges (16px sides on phones) */
+}
+
+/* ---------- Header ---------- */
+.top { /* the title bar */
+  display: flex; /* logo and text side by side */
+  align-items: center; /* line them up vertically */
+  gap: 14px; /* space between logo and text */
+  margin-bottom: 24px; /* space before the main content */
+}
+.logo { /* the square logo */
+  width: 48px; height: 48px; /* its size */
+  flex: none; /* never squash it */
+  display: grid; place-items: center; /* centre the icon inside */
+  border-radius: 14px; /* rounded square */
+  color: #fff; /* icon colour (SVG uses currentColor) */
+  background: linear-gradient(135deg, var(--accent), #8a5cf6); /* pink-to-purple diagonal gradient */
+  box-shadow: 0 6px 18px var(--accent-soft); /* a pink glow under it */
+}
+.top h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.02em; } /* tight, bold title */
+
+/* ---------- Light/dark switch (top-right) ---------- */
+.theme-toggle { /* the sun - switch - moon group */
+  margin-left: auto; /* "auto" left margin pushes it to the far right of the header */
+  display: inline-flex; align-items: center; gap: 8px; /* icons and switch side by side */
+  padding: 6px 10px; /* pill padding */
+  border-radius: 999px; /* pill shape */
+  background: var(--glass); /* frosted, like the cards */
+  backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); /* frosted-glass blur */
+  border: 1px solid var(--border); /* thin outline */
+  color: var(--muted); /* grey icons */
+  cursor: pointer; /* clicking anywhere on the pill flips the switch */
+}
+.theme-toggle svg { flex: none; transition: color 0.2s; } /* icons never squash; colour fades smoothly */
+:root:not([data-theme="dark"]) .theme-toggle .sun { color: #f5a524; } /* in light mode the sun lights up orange */
+:root[data-theme="dark"] .theme-toggle .moon { color: #a99bff; } /* in dark mode the moon lights up lavender */
+.sub { margin: 2px 0 0; color: var(--muted); } /* grey subtitle just under the title */
+
+/* ---------- Two-column layout ---------- */
+.layout { /* holds the controls and the canvas */
+  display: grid; /* CSS grid lets us place things in rows and columns */
+  grid-template-columns: minmax(0, 1fr) 360px; /* canvas column takes the leftover space; controls are 360px wide */
+  grid-template-areas: "canvas side"; /* name the areas: canvas on the left, side on the right */
+  gap: 24px; /* space between the columns */
+  align-items: start; /* don't stretch columns to the same height */
+}
+.side { grid-area: side; position: sticky; top: 16px; display: grid; gap: 16px; } /* controls stay in view while scrolling (sticky) */
+.canvas-col { grid-area: canvas; display: grid; gap: 16px; } /* canvas column, its items stacked with gaps */
+
+@media (max-width: 860px) { /* on narrower screens (tablets, phones)... */
+  .layout { /* ...switch to one column */
+    grid-template-columns: minmax(0, 1fr); /* one full-width column */
+    grid-template-areas: "side" "canvas"; /* controls first, then the canvas */
+  }
+  .side { position: static; } /* no sticking on small screens - it would cover the canvas */
+}
+
+/* ---------- Cards ---------- */
+.panel { /* each white card */
+  background: var(--glass); /* slightly see-through card colour */
+  backdrop-filter: blur(var(--glass-blur)); /* blur whatever shows through, like frosted glass, so text stays easy to read */
+  -webkit-backdrop-filter: blur(var(--glass-blur)); /* same rule for Safari, which uses an older name */
+  border: 1px solid var(--border); /* thin outline */
+  border-radius: var(--radius); /* rounded corners */
+  padding: 18px; /* space inside */
+  box-shadow: var(--shadow); /* soft shadow so it floats a little */
+}
+.panel-title { /* the heading at the top of each card */
+  display: flex; align-items: center; gap: 10px; /* badge and text side by side */
+  margin: 0 0 14px; /* space below */
+  font-size: 1rem; /* normal size, bold by default */
+}
+.step { /* the round number badge (1, 2, 3) */
+  width: 24px; height: 24px; /* a small circle */
+  display: grid; place-items: center; /* centre the number */
+  border-radius: 50%; /* make it round */
+  font-size: 0.8rem; /* small number */
+  background: var(--accent-soft); /* soft pink fill */
+  color: var(--accent); /* pink number */
+}
+.field-label { /* small labels above inputs */
+  display: block; /* own line */
+  margin-bottom: 6px; /* space before the input */
+  font-size: 0.85rem; /* a bit smaller */
+  font-weight: 600; /* semi-bold */
+  color: var(--muted); /* grey */
+}
+
+/* ---------- Text box ---------- */
+textarea { /* the text input */
+  display: block; width: 100%; /* full width */
+  padding: 12px 14px; /* space inside */
+  font: inherit; color: var(--text); /* same font and colour as the page */
+  background: var(--surface-2); /* slightly darker than the card */
+  border: 1px solid transparent; /* invisible border (appears on focus) */
+  border-radius: 12px; /* rounded corners */
+  resize: vertical; /* only taller, not wider */
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s; /* smooth change when focused */
+}
+textarea:focus { /* when the user is typing in it */
+  outline: none; /* remove the default browser outline... */
+  border-color: var(--accent); /* ...and show a pink border instead */
+  background: var(--surface); /* lighter fill */
+  box-shadow: 0 0 0 4px var(--accent-soft); /* a soft pink "focus ring" */
+}
+
+/* ---------- Rows of controls ---------- */
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; } /* items side by side, wrapping on small screens */
+.divider { height: 1px; background: var(--border); margin: 16px 0; } /* a thin grey line between rows */
+
+/* ---------- Buttons (shared look) ---------- */
+button { /* every button */
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; /* icon and text side by side */
+  font: inherit; font-weight: 600; /* page font, semi-bold */
+  padding: 9px 14px; /* space inside */
+  border-radius: 10px; /* rounded corners */
+  border: 1px solid var(--border); /* thin outline */
+  background: var(--surface); /* card colour */
+  color: var(--text); /* text colour */
+  cursor: pointer; /* hand cursor */
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s; /* smooth hover effects */
+}
+button:hover { border-color: var(--accent); color: var(--accent); } /* pink outline and text on hover */
+button:active { transform: translateY(1px); } /* press down slightly when clicked, like a real button */
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 2px; } /* clear outline for keyboard users */
+
+.ghost { background: transparent; } /* quieter buttons with no fill */
+.ghost.danger:hover { color: var(--error); border-color: var(--error); } /* Clear paint turns red on hover, as a warning */
+
+/* ---------- Segmented control (Brush | Eraser) ---------- */
+.segmented { /* the joined pair of buttons */
+  display: inline-flex; /* side by side */
+  padding: 4px; /* space around the buttons */
+  gap: 4px; /* space between them */
+  background: var(--surface-2); /* grey "track" behind them */
+  border-radius: 12px; /* rounded track */
+}
+.segmented .tool { border: none; background: transparent; padding: 8px 12px; color: var(--muted); } /* unselected: no box, grey text */
+.segmented .tool:hover { color: var(--text); } /* darker text on hover */
+.segmented .tool.active { /* the selected tool (app.js adds/removes "active") */
+  background: var(--surface); /* white pill */
+  color: var(--accent); /* pink text and icon */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); /* small shadow so it looks raised */
+}
+
+/* ---------- Colour pickers as round swatches ---------- */
+.swatch-field { /* the colour picker plus its text */
+  display: inline-flex; align-items: center; gap: 8px; /* side by side */
+  padding: 4px 12px 4px 4px; /* pill padding */
+  border: 2px solid var(--border-strong); /* thicker, stronger pill outline so the field is easy to spot */
+  border-radius: 999px; /* fully rounded ends */
+  font-size: 0.9rem; font-weight: 600; /* text style */
+  cursor: pointer; /* hand cursor - the whole pill opens the picker */
+  transition: border-color 0.15s; /* smooth colour change on hover */
+}
+.swatch-field:hover { border-color: var(--accent); } /* pink outline on hover */
+input[type="color"] { /* the colour picker itself */
+  -webkit-appearance: none; appearance: none; /* remove the browser's default boxy style */
+  width: 30px; height: 30px; /* a small circle */
+  padding: 0; border: none; /* no extra space or border */
+  border-radius: 50%; /* round */
+  background: none; /* no background */
+  cursor: pointer; /* hand cursor */
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } /* Chrome/Edge: remove the inner padding */
+input[type="color"]::-webkit-color-swatch { border: 1px solid var(--muted); border-radius: 50%; } /* Chrome/Edge: round colour with a visible ring, so dark colours still show on a dark card */
+input[type="color"]::-moz-color-swatch { border: 1px solid var(--muted); border-radius: 50%; } /* Firefox: same look */
+
+/* ---------- Brush size slider + preview ---------- */
+.size-field { margin-top: 14px; } /* space above the slider */
+.size-row { display: flex; align-items: center; gap: 14px; } /* slider and circle side by side */
+input[type="range"] { flex: 1; } /* slider fills the space (its full look is at the end of this file) */
+.size-label-row { display: flex; justify-content: space-between; align-items: baseline; } /* "Brush size" on the left, the number on the right */
+.size-value { /* the "14 px" number */
+  font-size: 0.8rem; font-weight: 700; /* small and bold */
+  color: var(--accent); /* pink, to match the slider */
+  background: var(--accent-soft); /* soft pink pill behind it */
+  padding: 2px 8px; border-radius: 999px; /* pill shape */
+  font-variant-numeric: tabular-nums; /* all digits the same width, so the pill doesn't wobble as the number changes */
+}
+.size-box { /* a fixed-size box so the row doesn't jump around as the circle changes */
+  width: 48px; height: 48px; /* a bit bigger than the largest brush (40px) */
+  flex: none; /* never squash it */
+  display: grid; place-items: center; /* centre the circle */
+  border-radius: 12px; /* rounded corners */
+  background: var(--surface-2); /* grey backdrop so the circle stands out */
+}
+.size-dot { /* the circle itself; its width/height/colour are set by app.js */
+  display: block; /* needed so width and height apply to a span */
+  border-radius: 50%; /* round */
+  background: var(--accent); /* starting colour */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); /* faint outline so pale colours are still visible */
+  transition: width 0.08s, height 0.08s; /* smooth growing/shrinking */
+}
+
+/* ---------- On/off switch (Snap to squares) ---------- */
+.switch-field { display: inline-flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; } /* switch and text side by side */
+.switch { /* the checkbox, restyled as a sliding switch */
+  -webkit-appearance: none; appearance: none; /* hide the normal tick box */
+  position: relative; /* lets us position the knob inside it */
+  width: 40px; height: 24px; /* the track size */
+  margin: 0; /* no stray spacing */
+  border-radius: 999px; /* pill shape */
+  background: var(--border); /* grey track when off */
+  cursor: pointer; /* hand cursor */
+  transition: background 0.2s; /* smooth colour change */
+}
+.switch::before { /* the round knob, drawn with a "pseudo-element" (an extra shape CSS adds for us) */
+  content: ""; /* required for ::before to appear */
+  position: absolute; top: 3px; left: 3px; /* start on the left */
+  width: 18px; height: 18px; /* knob size */
+  border-radius: 50%; /* round */
+  background: #fff; /* white knob */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); /* small shadow */
+  transition: transform 0.2s; /* smooth slide */
+}
+.switch:checked { background: var(--accent); } /* pink track when on */
+.switch:checked::before { transform: translateX(16px); } /* knob slides to the right when on */
+
+/* ---------- Messages ---------- */
+.message { margin: 10px 0 0; min-height: 1.3em; font-size: 0.85rem; color: var(--muted); } /* reserve a line so the page doesn't jump */
+.message.error { color: var(--error); } /* red text when something goes wrong */
+#downloadStatus:not(.error) { color: var(--success); } /* "Saved" messages are green */
+
+/* ---------- The canvas "stage" (two stacked layers) ---------- */
+.stage-wrap { /* a soft frame around the QR */
+  padding: clamp(12px, 3vw, 28px); /* frame thickness: grows with the screen, between 12px and 28px */
+  border-radius: 24px; /* rounded frame */
+  background: var(--glass); /* slightly see-through, like the other cards (the QR inside stays solid white) */
+  backdrop-filter: blur(var(--glass-blur)); /* frosted-glass blur */
+  -webkit-backdrop-filter: blur(var(--glass-blur)); /* same rule for Safari */
+  border: 1px solid var(--border); /* thin outline */
+  box-shadow: var(--shadow); /* soft shadow */
+}
+.stage { /* the container for both canvases */
+  position: relative; /* lets the canvases be positioned exactly on top of this box */
+  width: 100%; /* fill the frame */
+  max-width: 600px; /* but not too big */
+  margin: 0 auto; /* centre it */
+  aspect-ratio: 1 / 1; /* keep it a perfect square */
+  border-radius: 12px; /* rounded corners */
+  overflow: hidden; /* hide anything poking past the rounded corners */
+  background: #ffffff; /* the QR background is always white */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06); /* faint inner edge so white-on-white still shows its border */
+  user-select: none; /* stop a held press from starting text/element selection, which can steal the mouse from our painting */
+  -webkit-user-select: none; /* same rule for Safari, which uses an older name */
+  -webkit-touch-callout: none; /* stop iPhones/iPads from popping up a "save image" menu on a long press */
+}
+.stage canvas { /* both canvases */
+  position: absolute; inset: 0; /* stretch to all four edges and overlap */
+  width: 100%; height: 100%; /* fill the stage completely */
+  image-rendering: pixelated; /* keep QR squares sharp when scaled, not blurry */
+}
+
+#paintCanvas { /* only the top (paint) layer */
+  /* Custom mouse cursor shaped like a paintbrush. The picture is a small SVG drawing written right here
+     (a "data URL"), so no image file is needed. "3 29" is the hotspot: the exact pixel that paints (the brush tip).
+     "crosshair" is the backup if the browser can't show the custom cursor. */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cline x1='13' y1='19' x2='29' y2='3' stroke='%238b5a2b' stroke-width='4' stroke-linecap='round'/%3E%3Cline x1='10' y1='22' x2='14' y2='18' stroke='%23999' stroke-width='6'/%3E%3Cpath d='M3 29 C4 24 7 21 10 22 C11 25 8 29 3 29 Z' fill='%23e8467c' stroke='%23222' stroke-width='1'/%3E%3C/svg%3E") 3 29, crosshair;
+  touch-action: none; /* stop phones from scrolling the page when you paint with a finger */
+}
+#paintCanvas.eraser-cursor { /* when the eraser is selected, app.js adds this class to swap the cursor */
+  /* A tilted pink-and-white eraser block. "6 26" is its hotspot (the rubbing corner). */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='rotate(-45 16 16)'%3E%3Crect x='4' y='10' width='12' height='12' rx='2' fill='%23ffffff' stroke='%23222'/%3E%3Crect x='16' y='10' width='12' height='12' rx='2' fill='%23f28bb0' stroke='%23222'/%3E%3C/g%3E%3C/svg%3E") 6 26, cell;
+}
+
+/* ---------- Download card ---------- */
+.download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } /* two equal-width buttons */
+.format-btn { /* each big format button */
+  flex-direction: column; /* stack the name above the note */
+  align-items: flex-start; /* left-align the text */
+  gap: 2px; /* small space between name and note */
+  padding: 14px 16px; /* roomy inside */
+  border-radius: 14px; /* rounded */
+  text-align: left; /* left-align wrapped text */
+}
+.format-btn:hover { background: var(--accent-soft); } /* soft pink fill on hover */
+.format-name { font-size: 1.05rem; } /* the big "PNG"/"JPEG" text */
+.format-note { font-size: 0.78rem; font-weight: 500; color: var(--muted); } /* the small grey explanation */
+
+@media (max-width: 420px) { /* very narrow phones */
+  .download-grid { grid-template-columns: 1fr; } /* stack the download buttons */
+}
+
+/* ---------- Tip text ---------- */
+.hint { margin: 0; padding: 0 4px; font-size: 0.85rem; color: var(--muted); } /* small grey tip under the download card */
+.view-count { display: block; margin-top: 4px; } /* the page-view count goes on its own line under the tip */
+.view-count[hidden] { display: none; } /* keep it hidden until app.js has a number (display: block above would otherwise override "hidden") */
+
+/* =====================================================================
+   EASTER EGG ("party mode") - switched on by easter-egg.js after
+   5 quick flips of the light/dark switch. Nothing is saved, so a page
+   refresh brings everything back to normal.
+   ===================================================================== */
+
+/* Registering --blob-alpha as a real number (not just text) lets the browser
+   animate it smoothly, so the background fades to stronger colours instead of jumping. */
+@property --blob-alpha { /* @property = tell the browser what type a custom variable holds */
+  syntax: "<number>"; /* it's a number */
+  inherits: true; /* children use the parent's value, like normal variables */
+  initial-value: 0.52; /* fallback value */
+}
+body { transition: --blob-alpha 2.5s ease; } /* when --blob-alpha changes, glide to the new value over 2.5 seconds */
+.panel, .stage-wrap, .theme-toggle { transition: background-color 2s ease; } /* cards fade to their glassier look too */
+
+body.party { /* "party" class is added to <body> by easter-egg.js */
+  --blob-alpha: 0.8; /* much more solid colours */
+  --glass: rgba(255, 255, 255, 0.5); /* cards more see-through... */
+  --glass-blur: 28px; /* ...but blurred twice as much, so text stays easy to read (readability first!) */
+}
+:root[data-theme="dark"] body.party { /* the same idea in dark mode */
+  --blob-alpha: 0.55; /* stronger, but still dark-friendly */
+  --glass: rgba(24, 24, 30, 0.48); /* see-through dark cards */
+}
+
+/* The warm pulse: a soft orange/pink glow layer that slowly brightens and dims behind everything. */
+body.party::after { /* ::after = an extra layer CSS adds to the body for us */
+  content: ""; /* required for ::after to appear */
+  position: fixed; inset: 0; /* cover the whole window and stay put while scrolling */
+  z-index: -1; /* sit behind all the cards */
+  pointer-events: none; /* clicks pass straight through it */
+  background:
+    radial-gradient(70vw 70vh at 50% 35%, rgba(255, 160, 80, 0.45), transparent 70%),  /* warm orange glow in the middle */
+    radial-gradient(50vw 50vh at 15% 85%, rgba(255, 100, 120, 0.35), transparent 70%), /* rosy glow bottom-left */
+    radial-gradient(50vw 50vh at 90% 15%, rgba(255, 200, 90, 0.30), transparent 70%); /* golden glow top-right */
+  animation: warmPulse 6s ease-in-out infinite; /* one slow breath every 6 seconds, forever (well, until refresh) */
+}
+@keyframes warmPulse { /* the steps of the pulse animation */
+  0%, 100% { opacity: 0.15; } /* start and end: faint */
+  50% { opacity: 0.85; } /* halfway: glowing */
+}
+
+/* The fireworks are drawn on this full-window canvas, on top of everything. */
+.fx-canvas {
+  position: fixed; inset: 0; /* cover the whole window */
+  width: 100%; height: 100%; /* fill it */
+  pointer-events: none; /* clicks pass through, so the app keeps working during the show */
+  z-index: 50; /* above the cards */
+}
+
+/* The little "you found it" message at the top. */
+.egg-toast {
+  position: fixed; top: 16px; left: 50%; /* near the top, starting at the centre line */
+  transform: translateX(-50%); /* shift left by half its own width, so it's truly centred */
+  z-index: 60; /* above the fireworks */
+  max-width: calc(100% - 32px); /* never wider than the screen minus a 16px gap each side */
+  padding: 10px 18px; /* space inside */
+  border-radius: 999px; /* pill shape */
+  background: var(--surface); /* solid background so it's easy to read */
+  color: var(--text); /* normal text colour */
+  border: 1px solid var(--border); /* thin outline */
+  box-shadow: var(--shadow); /* soft shadow */
+  font-weight: 600; /* semi-bold */
+  text-align: center; /* centre wrapped text */
+  animation: toastIn 0.5s ease; /* slide in when it appears */
+  transition: opacity 0.8s ease; /* fade out smoothly when hidden */
+}
+.egg-toast.hide { opacity: 0; } /* easter-egg.js adds "hide" to fade it out */
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } } /* fade in while dropping down a little */
+
+/* People who set "reduce motion" on their computer get a calm version: no pulsing (the fireworks are skipped in easter-egg.js). */
+@media (prefers-reduced-motion: reduce) {
+  body.party::after { animation: none; opacity: 0.5; } /* a steady warm glow instead of a pulse */
+}
+
+/* =====================================================================
+   PHONES - smaller text and tighter spacing on narrow screens
+   (applies when the window is 560px wide or less)
+   ===================================================================== */
+@media (max-width: 560px) {
+  .app { padding: 16px 16px 32px; } /* a little less space around the page */
+
+  /* Header: logo, title and switch on one line; the subtitle gets its own full-width line underneath,
+     so the switch no longer squeezes it into a narrow column. */
+  .top { /* switch the header from a row to a grid */
+    display: grid; /* grid lets us place items in named spots */
+    grid-template-columns: auto 1fr auto; /* logo (its own size) | title (the rest) | switch (its own size) */
+    grid-template-areas: "logo title toggle" "sub sub sub"; /* row 1: logo, title, switch; row 2: subtitle across all three */
+    column-gap: 12px; row-gap: 8px; /* spacing between the spots */
+    margin-bottom: 16px; /* less space under the header */
+  }
+  .top > div:not(.logo) { display: contents; } /* "contents" removes the text wrapper box (but not the logo!), so the h1 and subtitle inside can be placed in the grid directly */
+  .logo { grid-area: logo; width: 40px; height: 40px; border-radius: 12px; } /* smaller logo */
+  .top h1 { grid-area: title; font-size: 1.3rem; } /* smaller title */
+  .theme-toggle { grid-area: toggle; padding: 5px 8px; gap: 6px; } /* slightly smaller switch pill */
+  .sub { grid-area: sub; margin: 0; font-size: 0.88rem; } /* subtitle on its own line, a bit smaller */
+
+  /* Cards and controls */
+  .panel { padding: 14px; } /* less padding inside cards */
+  .panel-title { font-size: 0.95rem; margin-bottom: 12px; } /* smaller card headings */
+  .field-label { font-size: 0.8rem; } /* smaller labels */
+  textarea { font-size: 0.95rem; padding: 10px 12px; } /* slightly smaller text box */
+  button { font-size: 0.9rem; padding: 8px 12px; } /* smaller buttons */
+  .segmented .tool { padding: 7px 10px; } /* smaller Brush/Eraser buttons */
+  .swatch-field, .switch-field { font-size: 0.85rem; } /* smaller labels next to colour dots and switches */
+  input[type="color"] { width: 26px; height: 26px; } /* smaller colour dots */
+  .message, .hint { font-size: 0.8rem; } /* smaller tips and messages */
+  .format-name { font-size: 0.95rem; } /* smaller PNG/JPEG titles */
+  .format-note { font-size: 0.72rem; } /* smaller notes under them */
+
+  /* The "secret found" message: smaller text, rounded box instead of a bubble when it wraps */
+  .egg-toast { font-size: 0.85rem; padding: 8px 14px; border-radius: 14px; top: auto; bottom: 16px; } /* on phones it sits at the bottom, so it doesn't cover the title */
+}
+
+/* =====================================================================
+   BRUSH SIZE SLIDER - our own look, so it's the same on every browser
+   and phone (some showed a plain grey bar with a square handle)
+   ===================================================================== */
+/* A slider has two parts: the TRACK (the bar) and the THUMB (the handle you drag).
+   Each browser names them differently, so we style both versions. */
+input[type="range"] {
+  --fill: 32%; /* how much of the bar is filled; app.js updates this as you drag */
+  -webkit-appearance: none; appearance: none; /* remove the browser's built-in slider look */
+  height: 28px; /* a tall invisible area, so the slider is easy to grab with a finger */
+  margin: 0; /* no stray spacing */
+  background: transparent; /* the input itself is invisible; the track below is what you see */
+  cursor: pointer; /* hand cursor */
+}
+
+/* --- Chrome, Edge, Safari --- */
+input[type="range"]::-webkit-slider-runnable-track { /* the bar */
+  height: 8px; /* bar thickness */
+  border-radius: 999px; /* rounded ends */
+  /* Two colours in one: a pink-to-purple fill up to --fill, then plain grey for the rest */
+  background:
+    linear-gradient(90deg, var(--accent), #8a5cf6) 0 / var(--fill) 100% no-repeat, /* the coloured part, only var(--fill) wide */
+    var(--surface-2); /* the empty part underneath */
+  box-shadow: inset 0 0 0 1px var(--border); /* thin outline so the empty part shows on light cards */
+}
+input[type="range"]::-webkit-slider-thumb { /* the handle */
+  -webkit-appearance: none; appearance: none; /* remove the default handle */
+  width: 22px; height: 22px; /* handle size */
+  margin-top: -7px; /* lift it so it sits centred on the 8px bar: (8 - 22) / 2 = -7 */
+  border-radius: 50%; /* round */
+  background: #fff; /* white centre */
+  border: 4px solid var(--accent); /* thick pink ring */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); /* shadow so it looks raised */
+  transition: transform 0.15s, box-shadow 0.15s; /* smooth grow/glow */
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.1); } /* grows a little on hover */
+input[type="range"]:active::-webkit-slider-thumb { /* while dragging */
+  transform: scale(1.15); /* grows a bit more */
+  box-shadow: 0 0 0 8px var(--accent-soft), 0 2px 6px rgba(0, 0, 0, 0.25); /* soft pink glow ring around it */
+}
+
+/* --- Firefox (its own names: range-track, range-progress, range-thumb) --- */
+input[type="range"]::-moz-range-track { /* the empty bar */
+  height: 8px; border-radius: 999px; /* thickness and rounded ends */
+  background: var(--surface-2); /* grey */
+  box-shadow: inset 0 0 0 1px var(--border); /* thin outline */
+}
+input[type="range"]::-moz-range-progress { /* Firefox draws the filled part for us */
+  height: 8px; border-radius: 999px; /* same shape as the bar */
+  background: linear-gradient(90deg, var(--accent), #8a5cf6); /* pink-to-purple */
+}
+input[type="range"]::-moz-range-thumb { /* the handle */
+  width: 14px; height: 14px; /* plus the 4px ring on each side = 22px, same as Chrome */
+  border-radius: 50%; /* round */
+  background: #fff; /* white centre */
+  border: 4px solid var(--accent); /* pink ring */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); /* shadow */
+}
