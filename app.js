@@ -340,7 +340,7 @@ themeToggle.addEventListener("change", () => { // runs when the user flips the s
 
 // ---------- Page view counter (talks to the HitCounter Java API) ----------
 // Every time this page is opened (or reloaded), we tell the counter API, which adds 1 and sends back the total.
-const LIVE_COUNTER_API = ""; // HitCounter's online address (e.g. "https://hitcounter-xxxx.onrender.com"); empty = no counter on the live site yet
+const LIVE_COUNTER_API = "https://hitcounter-847387196162.asia-southeast1.run.app"; // HitCounter on Google Cloud Run (project fridgechef-56971, Singapore); "" = no counter on the live site
 const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname); // are we running on your own computer?
 const COUNTER_API = isLocal ? "http://localhost:8081" : LIVE_COUNTER_API; // your PC talks to your local API; the live site talks to the online one
 const COUNTER_SITE = isLocal ? "qrpaint-dev" : "qrpaint"; // local testing gets its own count, so your test reloads don't inflate the real number
