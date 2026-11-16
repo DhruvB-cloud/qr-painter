@@ -7,7 +7,10 @@ Turn any link or message into a QR code, then colour it in. Paint only sticks to
 ## Features
 
 - QR code generated live as you type (error correction level H, so about 30% can be painted over and it still scans)
-- Brush and eraser, brush colour and size, "snap to squares" pixel mode, undo (Ctrl+Z) and clear
+- 10 square shapes (Square, Rounded, Dots, Fluid, Leaf, Diamond, Star, Heart, vertical and horizontal bars); the corner markers always stay solid
+- A social media logo in the centre (16 platforms) and an optional 3D look
+- 12 scan-safe brush colours (too-light custom colours are darkened automatically)
+- Brush and eraser, brush size, "snap to squares" pixel mode, undo (Ctrl+Z) and clear
 - Paint is clipped to the dark squares using a hidden mask canvas
 - Download as PNG or JPEG
 - Light / dark mode switch (remembers your choice)
@@ -22,7 +25,8 @@ Plain HTML, CSS and JavaScript - no framework, no build step.
 | --- | --- |
 | `index.html` | Page structure |
 | `style.css` | Layout, themes, the 16-colour background |
-| `app.js` | QR generation, painting, undo, download, theme, view counter |
+| `app.js` | QR generation, shapes, 3D, logo, colour swatches, painting, undo, download, theme, view counter |
+| `logos.js` | Social media logo shapes and colours (from Simple Icons, CC0) |
 | `easter-egg.js` | Fireworks, warm pulse and generated music (Web Audio API) |
 | `serve.py` | Local development server that disables caching |
 

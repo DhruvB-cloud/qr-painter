@@ -357,6 +357,33 @@ input[type="range"] { flex: 1; } /* slider fills the space (its full look is at 
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='rotate(-45 16 16)'%3E%3Crect x='4' y='10' width='12' height='12' rx='2' fill='%23ffffff' stroke='%23222'/%3E%3Crect x='16' y='10' width='12' height='12' rx='2' fill='%23f28bb0' stroke='%23222'/%3E%3C/g%3E%3C/svg%3E") 6 26, cell;
 }
 
+#topCanvas { pointer-events: none; } /* the 3D/logo layer only shows things; clicks fall through to the paint layer underneath */
+
+/* ---------- Colour swatches (only colours dark enough to scan) ---------- */
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; } /* a wrapping row of colour circles */
+.swatch { /* one colour circle */
+  width: 30px; height: 30px; padding: 0; border-radius: 50%; /* a perfect circle */
+  border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-strong); /* white gap ring plus a thin outer ring */
+  cursor: pointer; position: relative; /* hand cursor; lets the tick sit on top */
+}
+.swatch:hover { transform: scale(1.1); border-color: var(--surface); } /* grows a little on hover (keep the white gap ring) */
+.swatch.active { box-shadow: 0 0 0 2px var(--accent); } /* the chosen colour gets a pink ring */
+.swatch.active::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 14px; font-weight: 800; } /* white tick in the middle */
+.swatch.custom { /* the "pick your own" circle: a rainbow ring */
+  display: inline-grid; place-items: center;
+  background: conic-gradient(#e11d48, #f59e0b, #16a34a, #0284c7, #7c3aed, #e11d48); /* rainbow, so it reads as "any colour" */
+}
+.swatch.custom input[type="color"] { width: 18px; height: 18px; } /* the picker sits small in the middle of the rainbow ring */
+
+/* ---------- Shape and logo pickers: a grid of small picture buttons ---------- */
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin: 6px 0 4px; } /* as many columns as fit, each at least 64px */
+.pick { flex-direction: column; gap: 4px; padding: 8px 4px 6px; font-size: 0.72rem; font-weight: 600; line-height: 1.15; text-align: center; color: var(--muted); } /* picture on top, small name under it */
+.pick canvas, .pick svg { width: 27px; height: 27px; display: block; border-radius: 6px; } /* the preview picture */
+.pick canvas { background: #fff; padding: 2px; box-sizing: content-box; } /* shape previews sit on white, like the real QR */
+.pick.active { border-color: var(--accent); background: var(--accent-soft); color: var(--text); } /* the chosen one: pink outline and soft pink fill */
+.none-icon { width: 27px; height: 27px; display: grid; place-items: center; font-size: 1.2rem; border: 1px dashed var(--border-strong); border-radius: 6px; } /* the "no logo" box */
+.segmented + .field-label, .segmented { margin-bottom: 4px; } /* a little breathing room under the shape buttons */
+
 /* ---------- Download card ---------- */
 .download-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } /* two equal-width buttons */
 .format-btn { /* each big format button */
